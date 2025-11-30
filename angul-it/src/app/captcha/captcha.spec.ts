@@ -14,7 +14,7 @@ describe('Captcha', () => {
 
     fixture = TestBed.createComponent(Captcha);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {
