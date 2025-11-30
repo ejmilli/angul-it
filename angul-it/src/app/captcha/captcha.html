@@ -1,1 +1,92 @@
-<p>captcha works!</p>
+<div class="captcha-container">
+  <!-- Progress Restore Prompt -->
+  <div *ngIf="showRestorePrompt" class="restore-prompt">
+    <div class="restore-content">
+      <h3>{{ hasCompletedAllStages ? 'Challenge Already Completed' : 'Continue Previous Session?' }}</h3>
+      <p>{{ hasCompletedAllStages ? 'You have already completed all stages. Start a new challenge?' : 'We found your previous progress. Would you like to continue where you left off?' }}</p>
+      <div class="restore-buttons">
+        <button *ngIf="!hasCompletedAllStages" class="btn btn-primary" (click)="restoreProgress()">Continue Progress</button>
+        <button class="btn btn-secondary" (click)="startFresh()">Start Fresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Captcha Content (hidden when restore prompt is shown) -->
+  <div *ngIf="!showRestorePrompt">
+    <h2>Stage {{ currentStage }} of {{ totalStages }}</h2>
+    <p class="challenge-text">{{ currentChallenge.instruction }}</p>
+
+    <!-- Validation Message -->
+    <div
+      *ngIf="showValidation"
+      class="validation-message"
+      [class.success]="isCorrect"
+      [class.error]="!isCorrect"
+    >
+      <i class="icon" [class.check]="isCorrect" [class.warning]="!isCorrect"></i>
+      {{ validationMessage }}
+    </div>
+
+    <!-- TEXT INPUT CHALLENGE -->
+    <div *ngIf="currentChallenge.type === 'text-input'" class="text-input-challenge">
+      <div class="display-image">
+        <img [src]="getSafeImage(currentChallenge.images[0].src)" [alt]="currentChallenge.images[0].alt" />
+      </div>
+      <div class="input-container">
+        <input 
+          type="text" 
+          class="text-input" 
+          [(ngModel)]="userTextInput"
+          placeholder="Enter your answer here..."
+          [disabled]="showValidation && isCorrect"
+          (keyup.enter)="nextStage()"
+        />
+      </div>
+    </div>
+
+    <!-- IMAGE SELECTION CHALLENGE -->
+    <div *ngIf="currentChallenge.type !== 'text-input'" class="image-grid">
+      <div
+        *ngFor="let image of currentChallenge.images; let i = index"
+        class="image-item"
+        [class.selected]="selectedImages.includes(i)"
+        [class.wrong-answer]="shouldShowIncorrectIndicator(i)"
+        [class.disabled]="showValidation && isCorrect"
+        (click)="toggleImageSelection(i)"
+      >
+        <img [src]="getSafeImage(image.src)" [alt]="image.alt" />
+
+        <!-- Only show wrong indicator, NEVER show correct indicator -->
+        <div *ngIf="shouldShowIncorrectIndicator(i)" class="indicator wrong-indicator">✗</div>
+      </div>
+    </div>
+
+    <div class="challenge-controls">
+      <button
+        class="btn btn-secondary"
+        (click)="previousStage()"
+        [disabled]="currentStage === 1 || (showValidation && isCorrect)"
+      >
+        Previous
+      </button>
+
+      <button
+        class="btn btn-primary"
+        (click)="nextStage()"
+        [disabled]="currentChallenge.type === 'text-input' ? !userTextInput.trim() : selectedImages.length === 0"
+      >
+        {{ currentStage === totalStages ? 'Complete' : 'Verify & Next' }}
+      </button>
+    </div>
+
+    <!-- Completed stages indicator -->
+    <div class="completed-stages" *ngIf="completedStages.length > 0">
+      Stages Completed: {{ completedStages.join(', ') }}
+    </div>
+    <div class="progress-indicator">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="(completedStages.length / totalStages) * 100"></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,1 +1,49 @@
-<p>result works!</p>
+<div class="results-container">
+  <!-- Header Section -->
+  <div class="results-header">
+    <h1>🎯 Challenge Results</h1>
+    <div class="completion-badge" [class]="performanceRating.toLowerCase()">
+      {{ performanceRating }}
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card success">
+      <div class="card-value">{{ completedStages }}/{{ totalStages }}</div>
+      <div class="card-label">Stages Completed</div>
+    </div>
+  </div>
+
+  <!-- Completion Message -->
+  <div class="completion-message" [class]="performanceRating.toLowerCase()">
+    {{ completionMessage }}
+  </div>
+
+  <!-- Detailed Results -->
+  <div class="detailed-results">
+    <h3>Stage-by-Stage Results</h3>
+    <div class="results-list">
+      <div *ngFor="let result of results" class="result-item" [class]="result.status">
+        <div class="result-icon">
+          <span>✅</span>
+        </div>
+
+        <div class="result-content">
+          <div class="result-title">Stage {{ result.stage }}</div>
+          <div class="result-description">{{ result.instruction }}</div>
+        </div>
+
+        <div class="result-status">
+          <span class="status-text success">Completed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button class="btn btn-primary" (click)="startNewChallenge()">🔄 Start New Challenge</button>
+    <button class="btn btn-secondary" (click)="goHome()">🏠 Go Home</button>
+  </div>
+</div>
