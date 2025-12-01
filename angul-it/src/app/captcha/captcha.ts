@@ -489,23 +489,22 @@ private createNoisyTextCaptcha(text: string, seed: number = Date.now()): string 
   }
 
   ngOnInit() {
-    this.usedChallengeCategories.clear();
-    this.challenges = this.generateCaptchaChallenges();
-    
     this.checkForSavedProgress();
     this.resetValidation();
     
     // Only initialize if there's no progress at all.
     // This prevents re-initialization when navigating back from the results page.
     if (!this.stateService.hasSavedProgress()) {
-      console.log('No saved progress - starting fresh with new challenges including text-input types');
-      // Don't initialize here anymore. Let the user start fresh.
+      console.log('No saved progress - starting fresh with new challenges');
+      this.usedChallengeCategories.clear();
+      this.challenges = this.generateCaptchaChallenges();
+      this.stateService.initializeProgress();
+      this.saveCurrentProgress();
     } else {
       const progress = this.stateService.loadProgress();
       if (progress && progress.completedStages.length < 3) {
-        // There's partial progress, so load it.
-        console.log('Found saved progress - Click "Start Fresh" to see new text-input challenges!');
-        this.restoreProgress();
+        // There's partial progress, so we'll show the restore prompt
+        console.log('Found saved progress');
       }
     }
     
@@ -514,12 +513,16 @@ private createNoisyTextCaptcha(text: string, seed: number = Date.now()): string 
 
   private saveCurrentProgress() {
     const challengeInstructions = this.challenges.map(c => c.instruction);
+    const usedCategories = Array.from(this.usedChallengeCategories);
     this.stateService.saveProgress(
       this.currentStage,
       this.selectedImages,
       this.completedStages,
       undefined,
-      challengeInstructions
+      challengeInstructions,
+      undefined,
+      this.challenges,
+      usedCategories
     );
   }
 
@@ -549,6 +552,21 @@ private createNoisyTextCaptcha(text: string, seed: number = Date.now()): string 
       this.currentStage = savedProgress.currentStage;
       this.selectedImages = [...savedProgress.selectedImages];
       this.completedStages = [...savedProgress.completedStages];
+      
+      // Restore the actual challenge data and used categories
+      if (savedProgress.challenges && savedProgress.challenges.length > 0) {
+        this.challenges = savedProgress.challenges;
+        console.log('Restored saved challenges');
+      } else {
+        // Fallback: generate new challenges if none saved
+        this.usedChallengeCategories.clear();
+        this.challenges = this.generateCaptchaChallenges();
+        console.log('No saved challenges found, generating new ones');
+      }
+      
+      if (savedProgress.usedCategories) {
+        this.usedChallengeCategories = new Set(savedProgress.usedCategories);
+      }
     }
     this.showRestorePrompt = false;
   }
@@ -654,13 +672,16 @@ private createNoisyTextCaptcha(text: string, seed: number = Date.now()): string 
         // Set end time on final completion
         const endTime = Date.now();
         const progress = this.stateService.loadProgress();
+        const usedCategories = Array.from(this.usedChallengeCategories);
         this.stateService.saveProgress(
           this.currentStage,
           this.selectedImages,
           this.completedStages,
           progress?.startTime,
           progress?.challengeInstructions,
-          endTime
+          endTime,
+          this.challenges,
+          usedCategories
         );
         this.router.navigate(['/result']);
       } else {
@@ -726,14 +747,18 @@ private createNoisyTextCaptcha(text: string, seed: number = Date.now()): string 
     // Replace only the current stage's challenge
     this.challenges[this.currentStage - 1] = newChallenges[0];
     
-    // Update saved instructions
+    // Update saved instructions and challenges
     const challengeInstructions = this.challenges.map(c => c.instruction);
+    const usedCategories = Array.from(this.usedChallengeCategories);
     this.stateService.saveProgress(
       this.currentStage,
       [],
       this.completedStages,
       undefined,
-      challengeInstructions
+      challengeInstructions,
+      undefined,
+      this.challenges,
+      usedCategories
     );
   }
 

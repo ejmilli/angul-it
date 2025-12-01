@@ -5,6 +5,15 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
 
+interface Challenge {
+  instruction: string;
+  images: { src: string; alt: string; }[];
+  correctCategory: string;
+  correctAnswers: number[];
+  type?: 'selection' | 'text-input';
+  textAnswer?: string;
+}
+
 interface CaptchaProgress {
   currentStage: number;
   selectedImages: number[];
@@ -13,6 +22,8 @@ interface CaptchaProgress {
   startTime: number;
   endTime?: number | null; // Track completion time
   challengeInstructions?: string[]; // Store actual challenge instructions
+  challenges?: Challenge[]; // Store the actual challenge data
+  usedCategories?: string[]; // Store used challenge categories
 }
 
 @Injectable({
@@ -24,7 +35,16 @@ export class CaptchaState {
 
   constructor() {}
 
-  saveProgress(currentStage: number, selectedImages: number[], completedStages: number[], startTime?: number, challengeInstructions?: string[], endTime?: number | null): void {
+  saveProgress(
+    currentStage: number, 
+    selectedImages: number[], 
+    completedStages: number[], 
+    startTime?: number, 
+    challengeInstructions?: string[], 
+    endTime?: number | null,
+    challenges?: Challenge[],
+    usedCategories?: string[]
+  ): void {
     if (!isBrowser()) return; // Guard for SSR
     
     const existingProgress = this.loadProgress();
@@ -36,7 +56,9 @@ export class CaptchaState {
       timestamp: Date.now(),
       startTime: startTime || existingProgress?.startTime || Date.now(),
       endTime: endTime !== undefined ? endTime : existingProgress?.endTime,
-      challengeInstructions: challengeInstructions || existingProgress?.challengeInstructions
+      challengeInstructions: challengeInstructions || existingProgress?.challengeInstructions,
+      challenges: challenges || existingProgress?.challenges,
+      usedCategories: usedCategories || existingProgress?.usedCategories
     };
     
     try {
